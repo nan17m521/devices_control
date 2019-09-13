@@ -39,15 +39,11 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-
 #include "main.h"
-#include "messages.h"
-#include "device.h"
-#include "communication.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "communication.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,32 +60,29 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim3;
 
-TIM_HandleTypeDef   htim3;
+UART_HandleTypeDef huart1;
 
-UART_HandleTypeDef  huart1;
+uint8_t buf;
+uint8_t pack_length;
+uint8_t prevTick;
+uint8_t receive_buf[RECEIVE_BUFFER_SIZE];
+uint8_t rx_counter;
+bool    byte_received;
+bool    TX_done;
+bool    RX_error;
 
-bool      RX_error         =  false;
-bool      byte_received    =  false;
-bool      TX_done          =  true;
-
-uint8_t   receive_buf[RECEIVE_BUFFER_SIZE];
-uint8_t   rx_counter   =  0;
-uint8_t   buf          =  0;
-uint8_t   pack_length  =  0;
-
-uint32_t  prevTick     =  0;
+extern device_settings device_struct1;
 
 /* USER CODE BEGIN PV */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-
-void         SystemClock_Config(void);
-static void  MX_GPIO_Init(void);
-static void  MX_USART1_UART_Init(void);
-static void  MX_TIM3_Init(void);
-
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -116,6 +109,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   /* USER CODE END Init */
+
   /* Configure the system clock */
   SystemClock_Config();
 
@@ -123,18 +117,22 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-
+  MX_GPIO_Init();
+  MX_USART1_UART_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   /* USER CODE END 2 */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_TIM3_Init();
-  HAL_TIM_PWM_Start_IT(&htim3,  TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start_IT(&htim3,  TIM_CHANNEL_3);
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
 	  if (byte_received  &&  TX_done) {
 		  byte_received  =  false;
@@ -177,7 +175,6 @@ int main(void)
 			  HAL_UART_Receive_IT(&huart1,  &buf,  1);
 		  }
 	  }
-
 
 	  if (HAL_GetTick() - prevTick  >=  RECEIVE_TIMEOUT)  {
 		  RX_error  =  1;
@@ -249,7 +246,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
+  htim3.Init.Prescaler = 10000;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 256;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -323,18 +320,18 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11|GPIO_PIN_8, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA5 PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_15;
+  /*Configure GPIO pins : PB11 PB8 */
+  GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_8;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 

@@ -49,11 +49,11 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
-#include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdint.h>
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -85,8 +85,8 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 #define  RECEIVE_BUFFER_SIZE                15
 #define  TRANSMIT_BUFFER_SIZE               18
-#define  RS485_DIR_PORT                     GPIOA
-#define  RS485_DIR_PIN                      GPIO_PIN_5
+#define  RS485_DIR_PORT                     GPIOB
+#define  RS485_DIR_PIN                      GPIO_PIN_8
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

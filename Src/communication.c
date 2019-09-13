@@ -8,13 +8,15 @@
 
 uint8_t  transmit_buffer[TRANSMIT_BUFFER_SIZE];
 
+extern  device_settings device_struct1;
+
 bool parse_normal_package(device_settings *device_struct,  uint8_t  *message)  {
 	if  (IsChecksumm8bCorrect(message, NORMAL_REQUEST_LENGTH))  {
 		struct Request req;
 		memcpy((void*)&req,  (void*)message,  NORMAL_REQUEST_LENGTH);
         if  (req.address  ==  device_struct->device_adress)  {
         	device_struct->PWM_Duty  =  req.velocity;
-        	UpdateDeviceSettings(&device_struct);
+        	UpdateDeviceSettings(&device_struct1);
             return true;
         }
 	}
@@ -27,7 +29,7 @@ bool parse_device_package(device_settings *device_struct,  uint8_t  *message)  {
 		memcpy((void*)&req,  (void*)message,  DEVICES_REQUEST_LENGTH);
         if  (req.address  ==  device_struct->device_adress)  {
         	device_struct->PWM_Duty  =  req.velocity1;
-        	UpdateDeviceSettings(&device_struct);
+        	UpdateDeviceSettings(&device_struct1);
             return true;
         }
 	}

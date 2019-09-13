@@ -34,10 +34,8 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-
 #include "main.h"
 #include "stm32f1xx_it.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -59,8 +57,8 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
-extern  bool     byte_received;
-extern  bool     TX_done;
+extern  bool  byte_received;
+extern  bool  TX_done;
 
 /* USER CODE END PV */
 
@@ -75,6 +73,8 @@ extern  bool     TX_done;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern TIM_HandleTypeDef   htim3;
+extern UART_HandleTypeDef  huart1;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -229,6 +229,20 @@ void RCC_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM3 global interrupt.
+  */
+void TIM3_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM3_IRQn 0 */
+  HAL_GPIO_TogglePin(GPIOB,  GPIO_PIN_11);
+  /* USER CODE END TIM3_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim3);
+  /* USER CODE BEGIN TIM3_IRQn 1 */
+
+  /* USER CODE END TIM3_IRQn 1 */
+}
+
+/**
   * @brief This function handles USART1 global interrupt.
   */
 void USART1_IRQHandler(void)
@@ -252,8 +266,8 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)  {
 	HAL_GPIO_WritePin(RS485_DIR_PORT,  RS485_DIR_PIN,  RESET);
 }
 
-void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)  {
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_15);
-}
+/*void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)  {
+	HAL_GPIO_TogglePin(GPIOB,  GPIO_PIN_11);
+}*/
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

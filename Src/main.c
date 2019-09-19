@@ -64,14 +64,16 @@ TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
 
-uint8_t buf;
-uint8_t pack_length;
-uint8_t prevTick;
-uint8_t receive_buf[RECEIVE_BUFFER_SIZE];
-uint8_t rx_counter;
-bool    byte_received;
-bool    TX_done;
-bool    RX_error;
+uint8_t   receive_buf[RECEIVE_BUFFER_SIZE];
+uint8_t   buf             =  0;
+uint8_t   rx_counter      =  0;
+uint8_t   pack_length     =  NORMAL_REQUEST_LENGTH;
+
+uint32_t  prevTick        =  0;
+
+bool      byte_received   =  false;
+bool      TX_done         =  true;
+bool      RX_error        =  false;
 
 extern device_settings device_struct1;
 
@@ -134,45 +136,29 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if (byte_received  &&  TX_done) {
+
+
+		  HAL_UART_Receive_IT(&huart1,  &buf,  1);
+
+      if (byte_received  &&  TX_done) {
 		  byte_received  =  false;
 		  receive_buf[rx_counter++]  =  buf;
-	      if (rx_counter  ==  0) {
+	      if (rx_counter  ==  1) {
 		      prevTick  =  HAL_GetTick();
 		  }
 
-	      if (rx_counter  ==  1) {
-	    	  switch  (buf)  {
-			  case NORMAL_REQUEST_TYPE:
-				  pack_length  =  NORMAL_REQUEST_LENGTH;
-			  case TERMINAL_REQUEST_TYPE:
-				  pack_length  =  TERMINAL_REQUEST_LENGTH;
-	 		  case DEVICE_REQUEST_TYPE:
-				  pack_length  =  DEVICES_REQUEST_LENGTH;
-			  default:
-				  RX_error  =  true;
-	    	  }
+	      if (rx_counter  ==  2) {
+
 	      }
 
 		  if (rx_counter  ==  pack_length) {
 			  rx_counter  =  0;
-			  TX_done  =  false;
-			  switch (pack_length) {
-			  case NORMAL_REQUEST_LENGTH:
 				  if (parse_normal_package(&device_struct1,  receive_buf))  {
-					 normal_response(&device_struct1);
+					  TX_done   =  false;
+					  normal_response(&device_struct1);
 				  } else {
 					  RX_error  =  1;
-				  }
-			  case DEVICES_REQUEST_LENGTH:
-				  if (parse_device_package(&device_struct1,  receive_buf))  {
-					  device_response(&device_struct1);
-				  } else {
-					  RX_error  =  1;
-				  }
 			  }
-		  } else {
-			  HAL_UART_Receive_IT(&huart1,  &buf,  1);
 		  }
 	  }
 
@@ -183,9 +169,7 @@ int main(void)
 	  if (RX_error) {
 		  RX_error    =  false;
 		  rx_counter  =  0;
-		  HAL_Delay(3);
 	  }
-
   }
   /* USER CODE END 3 */
 }

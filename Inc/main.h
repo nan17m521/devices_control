@@ -83,7 +83,7 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
-#define  RECEIVE_BUFFER_SIZE                15
+#define  RECEIVE_BUFFER_SIZE                18
 #define  TRANSMIT_BUFFER_SIZE               18
 #define  RS485_DIR_PORT                     GPIOB
 #define  RS485_DIR_PIN                      GPIO_PIN_8

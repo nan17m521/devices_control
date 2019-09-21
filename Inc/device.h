@@ -6,10 +6,8 @@
 #include <stdint.h>
 
 typedef struct {
-
 	uint8_t device_adress;
 	uint8_t PWM_Duty;
-
 } device_settings;
 
 void UpdateDeviceSettings(device_settings *device_struct);

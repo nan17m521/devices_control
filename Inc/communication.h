@@ -7,6 +7,8 @@
 
 bool parse_normal_package(device_settings *device_struct,  uint8_t  *message);
 bool parse_device_package(device_settings *device_struct,  uint8_t  *message);
+bool parse_config_package(device_settings *device_struct,  uint8_t  *message);
+
 void normal_response();
 void device_response();
 

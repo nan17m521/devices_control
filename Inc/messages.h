@@ -46,6 +46,29 @@ struct Response
 	uint8_t  crc;
 };
 
+struct DevicesRequest
+{
+	uint8_t AA1;
+	uint8_t AA2;
+	uint8_t address;
+	uint8_t setting;
+	uint8_t velocity1;
+	uint8_t velocity2;
+	uint8_t crc;
+};
+
+struct DevicesResponse
+{
+	uint8_t AA;
+	uint8_t address;
+	uint8_t errors;
+	uint16_t current1;
+	uint16_t current2;
+	uint8_t velocity1;
+	uint8_t velocity2;
+	uint8_t crc;
+};
+
 struct TerminalRequest
 {
 	uint8_t  AA;

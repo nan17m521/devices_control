@@ -44,6 +44,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "communication.h"
+#include "flash.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,10 +65,12 @@ TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
 
+/* USER CODE BEGIN PV */
+
 uint8_t   receive_buf[RECEIVE_BUFFER_SIZE];
 uint8_t   buf             =  0;
 uint8_t   rx_counter      =  0;
-uint8_t   pack_length     =  NORMAL_REQUEST_LENGTH;
+uint8_t   pack_length     =  0;
 
 uint32_t  prevTick        =  0;
 
@@ -77,7 +80,6 @@ bool      RX_error        =  false;
 
 extern device_settings device_struct1;
 
-/* USER CODE BEGIN PV */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -103,6 +105,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
+  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -130,15 +133,15 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_TIM3_Init();
-  HAL_TIM_PWM_Start_IT(&htim3,  TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim3,  TIM_CHANNEL_3);
+  FLASH_ReadSettings(&device_struct1);
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
+      HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  HAL_GPIO_ReadPin(GPIOB,  GPIO_PIN_0));
 
-
-		  HAL_UART_Receive_IT(&huart1,  &buf,  1);
+      HAL_UART_Receive_IT(&huart1,  &buf,  1);
 
       if (byte_received  &&  TX_done) {
 		  byte_received  =  false;
@@ -147,17 +150,37 @@ int main(void)
 		      prevTick  =  HAL_GetTick();
 		  }
 
-	      if (rx_counter  ==  2) {
+	      if (rx_counter  ==  2)  {
+	    	  switch (buf) {
+	    	  case    DEVICE_REQUEST_TYPE:
+	    		  pack_length  =  DEVICES_REQUEST_LENGTH;
+	    		  break;
+	    	  case    CONFIG_REQUEST_TYPE:
+	    		  pack_length  =  CONFIG_REQUEST_LENGTH;
+	    		  break;
+	    	  default:
+	    		  RX_error  =  1;
+	    		  break;
+	    	  }
 
 	      }
 
 		  if (rx_counter  ==  pack_length) {
 			  rx_counter  =  0;
-				  if (parse_normal_package(&device_struct1,  receive_buf))  {
+			  switch (pack_length) {
+			  case DEVICES_REQUEST_LENGTH:
+				  if (parse_device_package(&device_struct1,  receive_buf))  {
 					  TX_done   =  false;
-					  normal_response(&device_struct1);
+					  device_response(&device_struct1);
 				  } else {
 					  RX_error  =  1;
+			      }
+				  break;
+			  case CONFIG_REQUEST_LENGTH:
+				  if (parse_config_package(&device_struct1,  receive_buf))  {
+					  FLASH_WriteSettings(&device_struct1);
+				  }
+				  break;
 			  }
 		  }
 	  }
@@ -183,7 +206,7 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
@@ -196,7 +219,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -230,9 +253,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 10000;
+  htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 256;
+  htim3.Init.Period = 255;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
@@ -246,7 +269,7 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 128;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)

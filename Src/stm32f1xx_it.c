@@ -73,8 +73,8 @@ extern  bool  TX_done;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern TIM_HandleTypeDef   htim3;
-extern UART_HandleTypeDef  huart1;
+extern TIM_HandleTypeDef htim3;
+extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */

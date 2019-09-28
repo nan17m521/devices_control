@@ -46,7 +46,7 @@ void device_response(device_settings  *device_struct)
 
     HAL_GPIO_WritePin(RS485_DIR_PORT,  RS485_DIR_PIN,  GPIO_PIN_SET);
 
-    HAL_UART_Transmit_IT(&huart1,  transmit_buffer,  DEVICES_RESPONSE_LENGTH);
+    HAL_UART_Transmit_DMA(&huart1,  transmit_buffer,  DEVICES_RESPONSE_LENGTH);
 }
 
 bool parse_config_package(device_settings *device_struct,  uint8_t  *message)

@@ -3,9 +3,7 @@
 
 /* STM send requests and devices send responses */
 
-#define RECEIVE_TIMEOUT                     6
-
-#define CURRENT_DEVICE_ADRESS               0x01
+#define RECEIVE_TIMEOUT                     10
 
 #define NORMAL_REQUEST_TYPE                 0x01
 #define TERMINAL_REQUEST_TYPE               0x02

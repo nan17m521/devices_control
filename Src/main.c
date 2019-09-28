@@ -64,19 +64,22 @@
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
 
 uint8_t   receive_buf[RECEIVE_BUFFER_SIZE];
-uint8_t   buf             =  0;
-uint8_t   rx_counter      =  0;
-uint8_t   pack_length     =  0;
+uint8_t   buf                =  0;
+uint8_t   rx_counter         =  0;
+uint8_t   pack_length        =  0;
 
-uint32_t  prevTick        =  0;
+uint32_t  prevTick           =  0;
 
-bool      byte_received   =  false;
-bool      TX_done         =  true;
-bool      RX_error        =  false;
+bool      DMA_data_received  =  false;
+bool      byte_received      =  false;
+bool      TX_done            =  true;
+bool      RX_error           =  false;
 
 extern device_settings device_struct1;
 
@@ -85,6 +88,7 @@ extern device_settings device_struct1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
@@ -123,6 +127,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
@@ -132,25 +137,31 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   HAL_TIM_PWM_Start(&htim3,  TIM_CHANNEL_3);
   FLASH_ReadSettings(&device_struct1);
-  if (device_struct1.device_adress  >  0x10)  {
+
+  if (device_struct1.device_adress  >  0x08)  {  /*Для первой прошивки*/
 	  device_struct1.device_adress  =  0x00;
   }
+
+  HAL_UART_Receive_IT(&huart1,  &buf,  1);
   while (1)
   {
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
-      HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  HAL_GPIO_ReadPin(GPIOB,  GPIO_PIN_0));
 
-      HAL_UART_Receive_IT(&huart1,  &buf,  1);
+      HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  HAL_GPIO_ReadPin(GPIOB,  GPIO_PIN_0));   /*Светодиод*/
 
-      if (byte_received  &&  TX_done) {
+      if (byte_received)  {
 		  byte_received  =  false;
-		  receive_buf[rx_counter++]  =  buf;
-	      if (rx_counter  ==  1) {
+		  rx_counter++;
+	      if (rx_counter  == 1) {
+	    	  receive_buf[rx_counter - 1]  =  buf;
 		      prevTick  =  HAL_GetTick();
+		      HAL_UART_Receive_IT(&huart1,  &buf,  1);
 		  }
 
 	      if (rx_counter  ==  2)  {
+	    	  receive_buf[rx_counter - 1]  =  buf;
 	    	  switch (buf) {
 	    	  case    DEVICE_REQUEST_TYPE:
 	    		  pack_length  =  DEVICES_REQUEST_LENGTH;
@@ -159,19 +170,22 @@ int main(void)
 	    		  pack_length  =  CONFIG_REQUEST_LENGTH;
 	    		  break;
 	    	  default:
-	    		  RX_error  =  1;
+	    	      {
+	    		  RX_error  =  true;
+	    		  HAL_UART_Receive_IT(&huart1,  &buf,  1);
 	    		  break;
+	    	      }
 	    	  }
-
+	    	  HAL_UART_Receive_DMA(&huart1, receive_buf + 2, pack_length - 2);
 	      }
 
-		  if (rx_counter  ==  pack_length) {
-			  rx_counter  =  0;
+	      if (rx_counter == 3) {
 			  switch (pack_length) {
 			  case DEVICES_REQUEST_LENGTH:
 				  if (parse_device_package(&device_struct1,  receive_buf))  {
 					  TX_done   =  false;
 					  device_response(&device_struct1);
+					  HAL_UART_Receive_IT(&huart1,  &buf,  1);
 				  } else {
 					  RX_error  =  1;
 			      }
@@ -182,21 +196,26 @@ int main(void)
 				  if (parse_config_package(&device_struct1,  receive_buf))  {
 					  if (device_struct1.device_adress  !=  OldAdress) {
 						  FLASH_WriteSettings(&device_struct1);
+						  HAL_UART_Receive_IT(&huart1,  &buf,  1);
 					  }
+				  } else {
+					  RX_error  =  1;
 				  }
 				  break;
 			      }
 			  }
-		  }
+	      }
 	  }
 
 	  if (HAL_GetTick() - prevTick  >=  RECEIVE_TIMEOUT)  {
+		  HAL_UART_DMAStop(&huart1);
 		  RX_error  =  1;
 	  }
 
 	  if (RX_error) {
 		  RX_error    =  false;
 		  rx_counter  =  0;
+		  HAL_UART_Receive_IT(&huart1,  &buf,  1);
 	  }
   }
   /* USER CODE END 3 */
@@ -318,6 +337,25 @@ static void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
+
+}
+
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
+  /* DMA1_Channel5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
 
 }
 

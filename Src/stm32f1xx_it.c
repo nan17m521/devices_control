@@ -56,9 +56,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+extern  uint8_t  buf;
 
-extern  bool  byte_received;
-extern  bool  TX_done;
+extern  bool     byte_received;
+extern  bool     TX_done;
+extern  bool     DMA_data_received;
 
 /* USER CODE END PV */
 
@@ -74,6 +76,8 @@ extern  bool  TX_done;
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim3;
+extern DMA_HandleTypeDef hdma_usart1_rx;
+extern DMA_HandleTypeDef hdma_usart1_tx;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
@@ -229,12 +233,40 @@ void RCC_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 channel4 global interrupt.
+  */
+void DMA1_Channel4_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel4_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_tx);
+  /* USER CODE BEGIN DMA1_Channel4_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel4_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 channel5 global interrupt.
+  */
+void DMA1_Channel5_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel5_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart1_rx);
+  /* USER CODE BEGIN DMA1_Channel5_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel5_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM3 global interrupt.
   */
 void TIM3_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM3_IRQn 0 */
-  HAL_GPIO_TogglePin(GPIOB,  GPIO_PIN_11);
+
   /* USER CODE END TIM3_IRQn 0 */
   HAL_TIM_IRQHandler(&htim3);
   /* USER CODE BEGIN TIM3_IRQn 1 */
@@ -257,13 +289,16 @@ void USART1_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)  {
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
 	byte_received  =  true;
 }
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)  {
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
 	TX_done  =  true;
 	HAL_GPIO_WritePin(RS485_DIR_PORT,  RS485_DIR_PIN,  RESET);
+	HAL_UART_Receive_IT(&huart1,  &buf,  1);
 }
 
 /*void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)  {

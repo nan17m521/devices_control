@@ -10,7 +10,8 @@ uint8_t  transmit_buffer[TRANSMIT_BUFFER_SIZE];
 
 extern  device_settings device_struct1;
 
-bool parse_device_package(device_settings *device_struct,  uint8_t  *message)  {
+bool parse_device_package(device_settings *device_struct,  uint8_t  *message)
+{
 	if  (IsChecksumm8bCorrect(message, DEVICES_REQUEST_LENGTH))  {
 
 		struct DevicesRequest req;
@@ -26,7 +27,8 @@ bool parse_device_package(device_settings *device_struct,  uint8_t  *message)  {
     return false;
 }
 
-void device_response(device_settings  *device_struct)  {
+void device_response(device_settings  *device_struct)
+{
 
 	struct DevicesResponse resp;
 
@@ -47,7 +49,8 @@ void device_response(device_settings  *device_struct)  {
     HAL_UART_Transmit_IT(&huart1,  transmit_buffer,  DEVICES_RESPONSE_LENGTH);
 }
 
-bool parse_config_package(device_settings *device_struct,  uint8_t  *message)  {
+bool parse_config_package(device_settings *device_struct,  uint8_t  *message)
+{
 	if  (IsChecksumm8bCorrect(message, CONFIG_REQUEST_LENGTH))  {
         struct ConfigRequest req;
 

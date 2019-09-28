@@ -1,7 +1,8 @@
 
 #include "flash.h"
 
-void  FLASH_ReadSettings (device_settings *device_struct)  {
+void  FLASH_ReadSettings (device_settings *device_struct)
+{
 
 	device_config  config;
 
@@ -17,7 +18,8 @@ void  FLASH_ReadSettings (device_settings *device_struct)  {
 	device_struct->device_adress  =  config.adress;
 }
 
-void  FLASH_WriteSettings (device_settings *device_struct)  {
+void  FLASH_WriteSettings (device_settings *device_struct)
+{
 
 	device_config  config;
 

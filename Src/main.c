@@ -130,11 +130,11 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  MX_GPIO_Init();
-  MX_USART1_UART_Init();
-  MX_TIM3_Init();
   HAL_TIM_PWM_Start(&htim3,  TIM_CHANNEL_3);
   FLASH_ReadSettings(&device_struct1);
+  if (device_struct1.device_adress  >  0x10)  {
+	  device_struct1.device_adress  =  0x00;
+  }
   while (1)
   {
     /* USER CODE END WHILE */
@@ -177,10 +177,15 @@ int main(void)
 			      }
 				  break;
 			  case CONFIG_REQUEST_LENGTH:
+			      {
+				  uint8_t OldAdress  =  device_struct1.device_adress;
 				  if (parse_config_package(&device_struct1,  receive_buf))  {
-					  FLASH_WriteSettings(&device_struct1);
+					  if (device_struct1.device_adress  !=  OldAdress) {
+						  FLASH_WriteSettings(&device_struct1);
+					  }
 				  }
 				  break;
+			      }
 			  }
 		  }
 	  }

@@ -6,6 +6,12 @@ device_settings device_struct1;
 
 void UpdateDeviceSettings(device_settings *device_struct)
 {
-	TIM3->CCR3  =  0x80^device_struct->PWM_Duty;
+	if  (device_struct->PWM_Duty  >=  0)  {
+		TIM3->CCR3  =  0;
+		TIM3->CCR4  =  device_struct->PWM_Duty;
+	}  else  {
+		TIM3->CCR4  =  0;
+		TIM3->CCR3  =  ~(device_struct->PWM_Duty)  +  1;
+	}
 }
 

@@ -38,15 +38,15 @@ void device_response(device_settings  *device_struct)
 	resp.current1      = 0x0000;
 	resp.current2      = 0x0000;
 	resp.velocity1     = device_struct->PWM_Duty;
-    resp.velocity2     = 0x00;
+    resp.velocity2     = device_struct->buttons_state;
 
 	memcpy((void*)transmit_buffer,  (void*)&resp,  DEVICES_RESPONSE_LENGTH - 1);
 
 	AddChecksumm8b(transmit_buffer,  DEVICES_RESPONSE_LENGTH);
 
-    HAL_GPIO_WritePin(RS485_DIR_PORT,  RS485_DIR_PIN,  GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA,  GPIO_PIN_5,  GPIO_PIN_SET);
 
-    HAL_UART_Transmit_DMA(&huart1,  transmit_buffer,  DEVICES_RESPONSE_LENGTH);
+    HAL_UART_Transmit_IT(&huart1,  transmit_buffer,  DEVICES_RESPONSE_LENGTH);
 }
 
 bool parse_config_package(device_settings *device_struct,  uint8_t  *message)

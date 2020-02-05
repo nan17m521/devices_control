@@ -38,6 +38,9 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+#include "device.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,6 +65,7 @@ extern  bool     byte_received;
 extern  bool     TX_done;
 extern  bool     DMA_data_received;
 
+extern device_settings device_struct1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,8 +80,6 @@ extern  bool     DMA_data_received;
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim3;
-extern DMA_HandleTypeDef hdma_usart1_rx;
-extern DMA_HandleTypeDef hdma_usart1_tx;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
@@ -205,6 +207,38 @@ void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
+    if (HAL_GPIO_ReadPin(BUTTON1_GPIO_Port,  BUTTON1_Pin)  ==  0) {
+  	  device_struct1.buttons_state  |=  0x01;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  SET);   /*Светодиод*/
+    } else {
+  	  device_struct1.buttons_state  &=  0x0E;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  RESET);
+    }
+
+    if (HAL_GPIO_ReadPin(BUTTON2_GPIO_Port,  BUTTON2_Pin)  ==  0) {
+  	  device_struct1.buttons_state  |=  0x02;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  SET);   /*Светодиод*/
+    } else {
+  	  device_struct1.buttons_state  &=  0x0D;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  RESET);
+    }
+
+    if (HAL_GPIO_ReadPin(BUTTON3_GPIO_Port,  BUTTON3_Pin)  ==  0) {
+  	  device_struct1.buttons_state  |=  0x04;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  SET);   /*Светодиод*/
+    } else {
+  	  device_struct1.buttons_state  &=  0x0B;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  RESET);
+    }
+
+    if (HAL_GPIO_ReadPin(BUTTON4_GPIO_Port,  BUTTON4_Pin)  ==  0) {
+  	  device_struct1.buttons_state  |=  0x08;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  SET);   /*Светодиод*/
+    } else {
+  	  device_struct1.buttons_state  &=  0x07;
+  	  HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  RESET);
+    }
+
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
@@ -230,34 +264,6 @@ void RCC_IRQHandler(void)
   /* USER CODE BEGIN RCC_IRQn 1 */
 
   /* USER CODE END RCC_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 channel4 global interrupt.
-  */
-void DMA1_Channel4_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel4_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart1_tx);
-  /* USER CODE BEGIN DMA1_Channel4_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel4_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 channel5 global interrupt.
-  */
-void DMA1_Channel5_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel5_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart1_rx);
-  /* USER CODE BEGIN DMA1_Channel5_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel5_IRQn 1 */
 }
 
 /**
@@ -297,7 +303,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
 	TX_done  =  true;
-	HAL_GPIO_WritePin(RS485_DIR_PORT,  RS485_DIR_PIN,  RESET);
+	HAL_GPIO_WritePin(GPIOA,  GPIO_PIN_5,  RESET);
 	HAL_UART_Receive_IT(&huart1,  &buf,  1);
 }
 

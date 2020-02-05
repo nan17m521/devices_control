@@ -82,11 +82,21 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define BUTTON1_Pin GPIO_PIN_0
+#define BUTTON1_GPIO_Port GPIOA
+#define BUTTON2_Pin GPIO_PIN_1
+#define BUTTON2_GPIO_Port GPIOA
+#define BUTTON3_Pin GPIO_PIN_2
+#define BUTTON3_GPIO_Port GPIOA
+#define BUTTON4_Pin GPIO_PIN_10
+#define BUTTON4_GPIO_Port GPIOB
+#define USER_LED_Pin GPIO_PIN_15
+#define USER_LED_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
+
 #define  RECEIVE_BUFFER_SIZE                20
 #define  TRANSMIT_BUFFER_SIZE               20
-#define  RS485_DIR_PORT                     GPIOB
-#define  RS485_DIR_PIN                      GPIO_PIN_8
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

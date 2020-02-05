@@ -43,8 +43,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include "communication.h"
 #include "flash.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,8 +66,6 @@
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
-DMA_HandleTypeDef hdma_usart1_rx;
-DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
 
@@ -88,7 +88,6 @@ extern device_settings device_struct1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
@@ -127,7 +126,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
@@ -136,7 +134,15 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   HAL_TIM_PWM_Start(&htim3,  TIM_CHANNEL_3);
-  HAL_TIM_PWM_Start(&htim3,  TIM_CHANNEL_4);
+
+  HAL_GPIO_WritePin(USER_LED_GPIO_Port,  USER_LED_Pin,  SET);
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(USER_LED_GPIO_Port,  USER_LED_Pin,  RESET);
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(USER_LED_GPIO_Port,  USER_LED_Pin,  SET);
+  HAL_Delay(500);
+  HAL_GPIO_WritePin(USER_LED_GPIO_Port,  USER_LED_Pin,  RESET);
+
   FLASH_ReadSettings(&device_struct1);
 
   if (device_struct1.device_adress  >  0x08)  {  /*Для первой прошивки*/
@@ -144,25 +150,24 @@ int main(void)
   }
 
   HAL_UART_Receive_IT(&huart1,  &buf,  1);
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 
-      HAL_GPIO_WritePin(GPIOB,  GPIO_PIN_11,  HAL_GPIO_ReadPin(GPIOB,  GPIO_PIN_0));   /*Светодиод*/
-
       if (byte_received)  {
 		  byte_received  =  false;
 		  rx_counter++;
 	      if (rx_counter  ==  1)  {
-	    	  receive_buf[rx_counter - 1]  =  buf;
+	    	  receive_buf[rx_counter  -  1]  =  buf;
 		      prevTick  =  HAL_GetTick();
 		      HAL_UART_Receive_IT(&huart1,  &buf,  1);
 		  }
 
 	      if (rx_counter  ==  2)  {
-	    	  receive_buf[rx_counter - 1]  =  buf;
+	    	  receive_buf[rx_counter  -  1]  =  buf;
 	    	  switch (buf) {
 	    	  case    DEVICE_REQUEST_TYPE:
 	    		  pack_length  =  DEVICES_REQUEST_LENGTH;
@@ -177,13 +182,13 @@ int main(void)
 	    		  break;
 	    	      }
 	    	  }
-	    	  HAL_UART_Receive_DMA(&huart1, receive_buf + 2, pack_length - 2);
+	    	  HAL_UART_Receive_IT(&huart1, receive_buf + 2, pack_length - 2);
 	      }
 
 	      if (rx_counter == 3) {
 			  switch (pack_length) {
 			  case DEVICES_REQUEST_LENGTH:
-				  if (parse_device_package(&device_struct1,  receive_buf))  {
+				  if (parse_device_package(&device_struct1,  receive_buf)) {
 					  TX_done   =  false;
 					  device_response(&device_struct1);
 					  HAL_UART_Receive_IT(&huart1,  &buf,  1);
@@ -194,7 +199,7 @@ int main(void)
 			  case CONFIG_REQUEST_LENGTH:
 			      {
 				  uint8_t OldAdress  =  device_struct1.device_adress;
-				  if (parse_config_package(&device_struct1,  receive_buf))  {
+				  if (parse_config_package(&device_struct1,  receive_buf)) {
 					  if (device_struct1.device_adress  !=  OldAdress) {
 						  FLASH_WriteSettings(&device_struct1);
 						  HAL_UART_Receive_IT(&huart1,  &buf,  1);
@@ -208,8 +213,8 @@ int main(void)
 	      }
 	  }
 
-	  if (HAL_GetTick() - prevTick  >=  RECEIVE_TIMEOUT)  {
-		  HAL_UART_DMAStop(&huart1);
+	  if (HAL_GetTick()  -  prevTick  >=  RECEIVE_TIMEOUT) {
+		  HAL_UART_AbortReceive(&huart1);
 		  RX_error  =  1;
 	  }
 
@@ -301,10 +306,6 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
@@ -345,25 +346,6 @@ static void MX_USART1_UART_Init(void)
 
 }
 
-/** 
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void) 
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel4_IRQn);
-  /* DMA1_Channel5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
-
-}
-
 /**
   * @brief GPIO Initialization Function
   * @param None
@@ -379,24 +361,32 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1|GPIO_PIN_2, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5|USER_LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11|GPIO_PIN_8, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PA1 PA2 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  /*Configure GPIO pins : BUTTON1_Pin BUTTON2_Pin */
+  GPIO_InitStruct.Pin = BUTTON1_Pin|BUTTON2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB11 PB8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_8;
+  /*Configure GPIO pin : BUTTON3_Pin */
+  GPIO_InitStruct.Pin = BUTTON3_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(BUTTON3_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA5 USER_LED_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_5|USER_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : BUTTON4_Pin */
+  GPIO_InitStruct.Pin = BUTTON4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(BUTTON4_GPIO_Port, &GPIO_InitStruct);
 
 }
 
